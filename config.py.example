@@ -1,0 +1,8 @@
+# config.py
+
+# Path to the Excel file
+EXCEL_FILE_PATH = "/path/to/plants_data.xlsx"
+
+# Directory where plant photos are saved
+PLANT_PHOTO_DIR = "/path/to/plant progress pics"
+
