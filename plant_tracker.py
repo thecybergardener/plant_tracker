@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
+from tkcalendar import Calendar
 from openpyxl import load_workbook
 from datetime import datetime
 import os
@@ -31,7 +32,9 @@ def calculate_ownership(purchase_date):
         years = ownership_duration.years
         months = ownership_duration.months
         days = ownership_duration.days
-        return f"{years} years, {months} months, {days} days"
+        # Format the purchase date as MM/DD/YYYY
+        formatted_purchase_date = purchase_date.strftime("%m/%d/%Y")
+        return f"{years} years, {months} months, {days} days (Purchased on {formatted_purchase_date})"
     return "N/A"
 
 # Function to get the last watering date when "Y" is selected
@@ -65,38 +68,38 @@ def get_last_photo(plant_name):
     return last_photo
 
 # Function to update Excel based on available data and handle optional photo upload
-def update_excel(plant_name, watering, humidity, temperature, notes, photo_path):
+def update_excel(plant_name, watering, humidity, temperature, notes, photo_path, selected_date):
     # Load the existing workbook
     wb = load_workbook(config.EXCEL_FILE_PATH)  # Use path from config
     
     # Get the appropriate sheet for the current month
-    current_month = datetime.now().strftime("%B_%Y")
+    current_month = selected_date.strftime("%B_%Y")
     if current_month not in wb.sheetnames:
         wb.create_sheet(current_month)
         new_sheet = wb[current_month]
-        new_sheet.append(["Date", "Plant Name", "Watering (Y/N)", "Humidity (%)", "Room Temperature (°C)", "Notes", "Photo Path"])
+        new_sheet.append(["Date", "Plant Name", "Watering (Y/N)", "Humidity (%)", "Room Temperature (°F)", "Notes", "Photo Path"])
     
     monthly_sheet = wb[current_month]
     
     # Find the last row in the monthly sheet to append new data
-    date_today = datetime.now().strftime("%d/%m/%Y")
+    date_today = selected_date.now().strftime("%m/%d/%Y")
     
     # Handle photo file and create path if photo is provided
     photo_destination = ""
     if photo_path:
-        year_folder = os.path.join(config.PLANT_PHOTO_DIR, datetime.now().strftime("%Y"))
-        month_folder = os.path.join(year_folder, datetime.now().strftime("%m-%B"))
+        year_folder = os.path.join(config.PLANT_PHOTO_DIR, selected_date.now().strftime("%Y"))
+        month_folder = os.path.join(year_folder, selected_date.now().strftime("%m-%B"))
         os.makedirs(month_folder, exist_ok=True)
 
         # Format photo name
-        photo_name = f"{plant_name.lower().replace(' ', '_')}_{date_today}.jpg"
+        photo_name = f"{plant_name.lower().replace(' ', '_')}_{selected_date}.jpg"
         photo_destination = os.path.join(month_folder, photo_name)
 
         # Copy photo to the destination folder
         shutil.copy(photo_path, photo_destination)
 
     # Append the data to the monthly sheet
-    row_data = [date_today, plant_name, watering if watering else "", 
+    row_data = [selected_date, plant_name, watering if watering else "", 
                 humidity if humidity else "", 
                 temperature if temperature else "", 
                 notes if notes else "", 
@@ -113,9 +116,15 @@ def on_plant_select(event):
     
     # Display species and description for the selected plant
     plant_species = plant_data[selected_plant_name]["plant"]
-    description = plant_data[selected_plant_name]["description"]
-    plant_species_label.config(text=f"Species: {plant_species}")
-    description_label.config(text=f"Description: {description}")
+    species_label.config(text=f"Species: {plant_species}")
+    # description = plant_data[selected_plant_name]["description"]
+    # description_label.config(text=f"Description1: {description}")
+    
+    # Update description box
+    description_text.config(state=tk.NORMAL)
+    description_text.delete("1.0", tk.END)
+    description_text.insert(tk.END, plant_data[selected_plant_name]["description"])
+    description_text.config(state=tk.DISABLED)  # Make it read-only
     
     # Get last watering date
     last_watering = get_last_watering(selected_plant_name)
@@ -123,12 +132,12 @@ def on_plant_select(event):
     
     # Get last photo path
     last_photo = get_last_photo(selected_plant_name)
-    last_photo_label.config(text=f"Last Photo Path: {last_photo}")
+    photo_label.config(text=f"Last Photo Path: {last_photo}")
     
     # Calculate and display ownership duration
     purchase_date = plant_data[selected_plant_name]["purchase_date"]
     ownership_duration = calculate_ownership(purchase_date)
-    ownership_label.config(text=f"Ownership: {ownership_duration}")
+    ownership_label.config(text=f"Age Select: {ownership_duration}")
 
 # Function to edit the plant name
 def edit_plant_name():
@@ -177,11 +186,11 @@ root = tk.Tk()
 root.title("PlantDaddy's Plant Data")
 
 # Set window size (width x height)
-root.geometry("600x500")
+root.geometry("800x600")
 
 # Add a label to the window
 label = tk.Label(root, text="Plant Tracker", font=("Arial", 16))
-label.pack(pady=20)
+label.grid(pady=20)
 
 # Row 0: Name Frame
 name_frame = tk.Frame(root)
@@ -190,64 +199,90 @@ name_frame.grid(row=0, column=0, columnspan=4, pady=10)
 plant_label = tk.Label(name_frame, text="Plant Name:")
 plant_label.grid(row=0, column=0, sticky="W", padx=10)
 
-
 # Fetch plant data from Excel
 plant_data = get_plant_info()
 
 # Dropdown for plant name (loaded from Excel sheet)
-plant_label = tk.Label(root, text="Select a Plant")
-plant_label.pack()
-
 plant_name = tk.StringVar(root)
-plant_menu = tk.OptionMenu(root, plant_name, *plant_data.keys(), command=on_plant_select)
-plant_menu.pack()
+plant_menu = tk.OptionMenu(name_frame, plant_name, *plant_data.keys(), command=on_plant_select)
+plant_menu.grid(row=0, column=1, columnspan=2, padx=10, pady=5)
 
-# Display plant species
-plant_species_label = tk.Label(root, text="Species: ")
-plant_species_label.pack()
+# Row 1: Detail Frame
+detail_frame = tk.Frame(root)
+detail_frame.grid(row=1, column=0, columnspan=2, pady=10)
 
-# Display description
-description_label = tk.Label(root, text="Description: ")
-description_label.pack()
+ownership_label = tk.Label(detail_frame, text="Age Before:")
+ownership_label.grid(row=0, column=0, sticky="W", padx=10)
+ownership_data = tk.Label(detail_frame, text="")
+ownership_data.grid(row=0, column=1, sticky="W")
 
-# Display last watering date
-last_watering_label = tk.Label(root, text="Last Watered: ")
-last_watering_label.pack()
+species_label = tk.Label(detail_frame, text="Species:")
+species_label.grid(row=1, column=0, sticky="W", padx=10)
+species_data = tk.Label(detail_frame, text="")
+species_data.grid(row=1, column=1, sticky="W")
 
-# Display last photo path
-last_photo_label = tk.Label(root, text="Last Photo Path: ")
-last_photo_label.pack()
+last_watering_label = tk.Label(detail_frame, text="Last Watering:")
+last_watering_label.grid(row=2, column=0, sticky="W", padx=10)
+last_watering_data = tk.Label(detail_frame, text="")
+last_watering_data.grid(row=2, column=1, sticky="W")
 
-# Display ownership duration
-ownership_label = tk.Label(root, text="Ownership: ")
-ownership_label.pack()
-
-# Dropdown for watering (Y/N)
-watering_label = tk.Label(root, text="Watered Today? (Y/N)")
-watering_label.pack()
-
-watering_options = ["Y", "N"]
-watering_choice = tk.StringVar(root)
-watering_menu = tk.OptionMenu(root, watering_choice, *watering_options)
-watering_menu.pack()
+# Row 2: Input Frame
+input_frame = tk.Frame(root)
+input_frame.grid(row=2, column=0, columnspan=2, pady=10)
 
 # Input for humidity (optional)
-humidity_label = tk.Label(root, text="Humidity (%)")
-humidity_label.pack()
-humidity_entry = tk.Entry(root)
-humidity_entry.pack()
+humidity_label = tk.Label(input_frame, text="Humidity (%)")
+humidity_label.grid(row=0, column=0, sticky="W", padx=10)
+humidity_entry = tk.Entry(input_frame)
+humidity_entry.grid(row=0, column=1, padx=10, pady=5)
 
 # Input for room temperature (optional)
-temp_label = tk.Label(root, text="Temperature (°F)")
-temp_label.pack()
-temp_entry = tk.Entry(root)
-temp_entry.pack()
+temperature_label = tk.Label(input_frame, text="Temperature (°F)")
+temperature_label.grid(row=1, column=0, sticky="W", padx=10)
+temperature_entry = tk.Entry(input_frame)
+temperature_entry.grid(row=1, column=1, padx=10, pady=5)
 
 # Input for notes (optional)
-notes_label = tk.Label(root, text="Notes")
-notes_label.pack()
-notes_entry = tk.Entry(root)
-notes_entry.pack()
+notes_label = tk.Label(input_frame, text="Notes:")
+notes_label.grid(row=2, column=0, sticky="W", padx=10)
+# Notes Entry Box for multiline input
+notes_entry = tk.Text(input_frame, height=4, width=30)
+notes_entry.grid(row=2, column=1, padx=10, pady=5)
+
+watering_label = tk.Label(input_frame, text="Watering (Y/N):")
+watering_label.grid(row=3, column=0, sticky="W", padx=10)
+watering_dropdown = tk.StringVar(input_frame)
+watering_menu = tk.OptionMenu(input_frame, watering_dropdown, "Y", "N")
+watering_menu.grid(row=3, column=1, padx=10, pady=5)
+watering_dropdown.set("N")  # Default to "No"
+
+# Row 1 & 2: Photo Frame for selecting and displaying a photo
+photo_frame = tk.Frame(root)
+photo_frame.grid(row=1, column=2, rowspan=2, columnspan=2, pady=10, padx=10)
+photo_label = tk.Label(photo_frame, text="Photo Here", relief="solid", width=20, height=10)
+photo_label.grid(row=0, column=0, columnspan=2, padx=10, pady=5)
+
+description_label = tk.Label(photo_frame, text="Description2:")
+description_label.grid(row=1, column=0, sticky="W", padx=10, pady=5)
+# Scrollable Description Box (Read-only, will scroll if text is too long)
+description_text = tk.Text(photo_frame, wrap="word", height=4, width=30, state=tk.DISABLED)
+description_text.grid(row=2, column=0, columnspan=2, padx=10, pady=5)
+# Add a scrollbar for the description box
+scrollbar = tk.Scrollbar(photo_frame, command=description_text.yview)
+description_text.config(yscrollcommand=scrollbar.set)
+scrollbar.grid(row=2, column=2, sticky="ns")
+
+# Date Picker (Date Selector)
+date_label = tk.Label(root, text="Select Date:")
+date_label.grid(row=4, column=0, pady=10)
+
+cal = Calendar(root, selectmode="day", date_pattern="mm/dd/yyyy")
+cal.grid(row=4, column=1, pady=10)
+
+# Row 3: Submit Button (Centered across all columns)
+# submit_button = tk.Button(root, text="Submit", width=20, command=lambda: submit(plant_name.get(), watering_dropdown.get()))
+submit_button = tk.Button(root, text="Submit", width=20, command=lambda: submit())
+submit_button.grid(row=3, column=0, columnspan=4, pady=20)
 
 # Button to upload a photo (optional)
 photo_path = ""
@@ -258,33 +293,33 @@ def upload_photo():
         photo_label.config(text=os.path.basename(photo_path))
 
 photo_button = tk.Button(root, text="Upload Photo (Optional)", command=upload_photo)
-photo_button.pack()
+photo_button.grid(row=9, column=0)
 
 photo_label = tk.Label(root, text="No photo selected")
-photo_label.pack()
+photo_label.grid(row=9, column=1)
 
 # Submit button function to gather inputs and update Excel
 def submit():
+    selected_date = cal.get_date()
     selected_plant_name = plant_name.get()
-    watering = watering_choice.get() if watering_choice.get() else None
+    watering = watering_dropdown.get() if watering_dropdown.get() else None
     humidity = humidity_entry.get() if humidity_entry.get() else None
-    temperature = temp_entry.get() if temp_entry.get() else None
-    notes = notes_entry.get() if notes_entry.get() else None
+    temperature = temperature_entry.get() if temperature_entry.get() else None
+    notes = notes_entry.get("1.0", tk.END).strip() if notes_entry.get("1.0", tk.END).strip() else None
+
+    print(f"Submitted: Plant={plant_name}, Watering={watering}")
 
     # Call the update_excel function to append the data
-    update_excel(selected_plant_name, watering, humidity, temperature, notes, photo_path)
+    update_excel(selected_plant_name, watering, humidity, temperature, notes, photo_path, selected_date)
 
     # Clear the inputs after submission
+    cal.set("")
     plant_name.set("")
-    watering_choice.set("")
+    watering_dropdown.set("")
     humidity_entry.delete(0, tk.END)
-    temp_entry.delete(0, tk.END)
+    temperature_entry.delete(0, tk.END)
     notes_entry.delete(0, tk.END)
     photo_label.config(text="No photo selected")
-
-# Create the submit button
-submit_button = tk.Button(root, text="Submit", command=submit)
-submit_button.pack()
 
 # Run Main application
 root.mainloop()
