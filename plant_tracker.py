@@ -73,7 +73,7 @@ def update_excel(plant_name, watering, humidity, temperature, notes, photo_path,
     wb = load_workbook(config.EXCEL_FILE_PATH)  # Use path from config
     
     # Get the appropriate sheet for the current month
-    current_month = selected_date.strftime("%B_%Y")
+    current_month = datetime.now().strftime("%B_%Y")
     if current_month not in wb.sheetnames:
         wb.create_sheet(current_month)
         new_sheet = wb[current_month]
@@ -82,13 +82,13 @@ def update_excel(plant_name, watering, humidity, temperature, notes, photo_path,
     monthly_sheet = wb[current_month]
     
     # Find the last row in the monthly sheet to append new data
-    date_today = selected_date.now().strftime("%m/%d/%Y")
+    date_today = datetime.now().strftime("%m/%d/%Y")
     
     # Handle photo file and create path if photo is provided
     photo_destination = ""
     if photo_path:
-        year_folder = os.path.join(config.PLANT_PHOTO_DIR, selected_date.now().strftime("%Y"))
-        month_folder = os.path.join(year_folder, selected_date.now().strftime("%m-%B"))
+        year_folder = os.path.join(config.PLANT_PHOTO_DIR, datetime.now().strftime("%Y"))
+        month_folder = os.path.join(year_folder, datetime.now().strftime("%m-%B"))
         os.makedirs(month_folder, exist_ok=True)
 
         # Format photo name
