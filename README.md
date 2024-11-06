@@ -26,6 +26,7 @@ A Python-based application for managing and tracking plant data using `tkinter` 
    Make sure you have Python 3.x installed, then install the required Python packages:
    ```bash
    sudo apt install python3-tk
+   python3 -m venv venv
    pip install -r requirements.txt
    ```
 
