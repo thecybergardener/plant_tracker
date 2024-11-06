@@ -18,8 +18,8 @@ A Python-based application for managing and tracking plant data using `tkinter` 
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/yourusername/plant-tracker-app.git
-   cd plant-tracker-app
+   git clone https://github.com/yourusername/plant-tracker.git
+   cd plant-tracker
    ```
 
 2. **Install dependencies**:
