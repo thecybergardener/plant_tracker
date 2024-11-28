@@ -8,7 +8,7 @@ import config
 class PlantTrackerApp:
     def __init__(self, root) -> None:
         self.root = root
-        self.root.title("Plant Data Entry")
+        self.root.title("Plant Journal")
         self.root.geometry("800x600")
         
         # Initialize Excel interaction classes
@@ -100,6 +100,9 @@ def main():
 
     # __call__
     print(plants[1]())
+
+    # description
+    print(plants[5].description)
 
 if __name__ == "__main__":
     main()
