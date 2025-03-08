@@ -1,7 +1,7 @@
 ---
 # Plant Tracker App
 
-A Python-based application for managing and tracking plant data using `tkinter` for the user interface and `openpyxl` for interacting with Excel files. This app helps you maintain detailed information about your plant collection, including names, species, purchase dates, and descriptions, while also allowing updates and the addition of new plants.
+A Python-based application for managing and tracking plant data. Think of it as a "Plant Journal." I use `tkinter` for the user interface and `openpyxl` for interacting with Excel files. This app helps you maintain detailed information about your plant collection, including names, species, purchase dates, and descriptions.
 
 ## Features
 
@@ -18,7 +18,7 @@ A Python-based application for managing and tracking plant data using `tkinter` 
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/yourusername/plant-tracker.git
+   git clone https://github.com/cybergardner/plant-tracker.git
    cd plant-tracker
    ```
 
