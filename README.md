@@ -91,5 +91,5 @@ Contributions are not welcome at this time.
 
 ## Contact
 
-For any inquiries or issues, please contact Bola at contant@cybergardner.cc
+For any inquiries or issues, please contact Bola at contant@thecybergardener.com
 
